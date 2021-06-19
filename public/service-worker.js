@@ -38,18 +38,13 @@ self.addEventListener("fetch", (event) => {
 
   // use cache first for all other requests for performance
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      // request is not in cache. make network request and cache the response
-      return caches.open(RUNTIME_CACHE).then((cache) => {
-        return fetch(event.request).then((response) => {
-          return cache.put(event.request, response.clone()).then(() => {
-            return response;
-          });
-        });
+    fetch(event.request).catch(() => {
+      return caches.match(event.request).then((response) => {
+        if (response) {
+          return response;
+        } else if (event.request.header.get("accept").includes("text/html")) {
+          return caches.match("/");
+        }
       });
     })
   );
