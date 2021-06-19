@@ -1,4 +1,4 @@
-const { json, response } = require("express");
+// const { json, response } = require("express");
 
 const indexedDB =
   window.indexedDB ||
@@ -6,7 +6,7 @@ const indexedDB =
   window.webkitIndexedDB ||
   window.msIndexedDB ||
   window.shimIndexedDB;
-let db;
+var db;
 const request = indexedDB.open("budget", 1);
 
 request.onupgradeneeded = function ({ target }) {
@@ -17,7 +17,7 @@ request.onupgradeneeded = function ({ target }) {
 request.onsuccess = function ({ target }) {
   db = target.result;
   if (navigator.onLine) {
-    checkDataBase();
+    checkDatabase();
   }
 };
 
@@ -26,7 +26,13 @@ request.onerror = function (e) {
   console.log(e);
 };
 
-function checkDataBase() {
+function saveRecord(data) {
+  const transaction = db.transaction(["pending"], "readwrite");
+  const store = transaction.objectStore("pending");
+  store.add(data);
+}
+
+function checkDatabase() {
   const transaction = db.transaction(["pending"], "readwrite");
   const store = transaction.objectStore("pending");
   const getAll = store.getAll();
@@ -35,8 +41,10 @@ function checkDataBase() {
       fetch("/api/transaction/bulk", {
         method: "POST",
         body: JSON.stringify(getAll.result),
-        headers: "application/json, text/plain, */*",
-        "Content-Type": "application/json",
+        headers: {
+          Accept: "application/json, text/plain, */*",
+          "Content-Type": "application/json",
+        },
       })
         .then((response) => {
           return response.JSON;
@@ -50,10 +58,4 @@ function checkDataBase() {
   };
 }
 
-function saveRecord(data) {
-  const transaction = db.transaction(["pending"], "readwrite");
-  const store = transaction.objectStore("pending");
-  store.add(data);
-}
-
-window.addEventListener("online", checkDataBase());
+window.addEventListener("online", checkDatabase());

@@ -1,6 +1,6 @@
-const PRECACHE = "precache-v1";
-const RUNTIME = "runtime";
-const FILES_TO_CACHE = [
+const CACHE_NAME = "my-site-cache-v1";
+const DATA_CACHE_NAME = "data-cache-v1";
+const url_to_cache = [
   "/",
   "/db.js",
   "/index.js",
@@ -12,10 +12,9 @@ const FILES_TO_CACHE = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches
-      .open(PRECACHE)
-      .then((cache) => cache.addAll(FILES_TO_CACHE))
-      .then(self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(url_to_cache);
+    })
   );
 });
 
@@ -24,14 +23,24 @@ self.addEventListener("fetch", (event) => {
   if (event.request.url.includes("/api/")) {
     // make network request and fallback to cache if network request fails (offline)
     event.respondWith(
-      caches.open(RUNTIME_CACHE).then((cache) => {
-        return fetch(event.request)
-          .then((response) => {
-            cache.put(event.request.url, response.clone());
-            return response;
-          })
-          .catch(() => caches.match(event.request));
-      })
+      caches
+        .open(DATA_CACHE_NAME)
+        .then((cache) => {
+          return fetch(event.request)
+            .then((response) => {
+              if (response.status === 200) {
+                cache.put(event.request.url, response.clone());
+              }
+
+              return response;
+            })
+            .catch((err) => {
+              return caches.match(event.request);
+            });
+        })
+        .catch((err) => {
+          console.log(err);
+        })
     );
     return;
   }
