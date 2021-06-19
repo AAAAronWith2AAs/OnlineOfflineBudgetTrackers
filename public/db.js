@@ -30,10 +30,12 @@ function saveRecord(data) {
   const transaction = db.transaction(["pending"], "readwrite");
   const store = transaction.objectStore("pending");
   store.add(data);
+  console.log(transaction);
 }
 
 function checkDatabase() {
   const transaction = db.transaction(["pending"], "readwrite");
+  console.log(transaction);
   const store = transaction.objectStore("pending");
   const getAll = store.getAll();
   getAll.onsuccess = function () {
@@ -47,7 +49,7 @@ function checkDatabase() {
         },
       })
         .then((response) => {
-          return response.JSON;
+          return response.json();
         })
         .then(() => {
           const transaction = db.transaction(["pending"], "readwrite");
@@ -58,4 +60,4 @@ function checkDatabase() {
   };
 }
 
-window.addEventListener("online", checkDatabase());
+window.addEventListener("online", checkDatabase);
